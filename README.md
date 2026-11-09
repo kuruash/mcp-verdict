@@ -1,50 +1,83 @@
 # MCP Verdict
 
-A lightweight, open-source testing tool for validating error handling and failure reporting in Model Context Protocol (MCP) servers.
+**Test how your MCP servers behave when things go wrong.**
+
+MCP Verdict is an open-source developer tool for testing the security boundaries and failure-handling behavior of Model Context Protocol (MCP) servers.
+
+The project aims to help developers catch incorrect error reporting, unexpected authorization behavior, and regressions before deploying MCP servers to production.
 
 ## Why MCP Verdict?
 
-MCP servers expose tools to AI applications. When a tool fails, the server should accurately communicate that failure so clients can respond appropriately.
+MCP servers connect AI applications to tools, APIs, databases, and external services.
 
-Incorrect error reporting can make failed operations appear successful and complicate debugging.
+When an MCP server receives an invalid request, encounters a tool execution failure, or receives an unauthorized request, it must respond according to its defined behavior and applicable protocol requirements.
 
-MCP Verdict aims to detect these problems through reproducible tests.
+Incorrect behavior can lead to confusing errors, security weaknesses, and unreliable AI applications.
 
-## Goals
+MCP Verdict aims to make these failure scenarios reproducible and testable.
 
-- Verify error signaling for expected MCP tool failures.
-- Detect incorrectly reported successful tool results.
-- Distinguish tool execution errors from protocol errors.
-- Provide understandable failure reports.
-- Support automated regression testing.
+## Planned Features
 
-## Initial Scope (v0.1)
+### Error-Handling Tests
 
-The first release will focus on validating the `isError` field in MCP tool-call results.
+- Verify expected tool execution errors.
+- Distinguish successful results, tool errors, and protocol errors.
+- Check incorrect or missing error indicators.
+- Detect regressions in error-handling behavior.
 
-We will build two example MCP servers:
+### Security Tests
 
-- A correct implementation that reports an expected execution failure using `isError: true`.
-- An intentionally incorrect implementation that returns the same failure with `isError: false`.
+- Verify that declared protected operations reject unauthenticated requests.
+- Test invalid authentication credentials.
+- Test authorization boundaries using explicitly configured test identities.
+- Check applicable MCP authorization requirements.
 
-MCP Verdict will execute both and verify the expected behavior.
+### Developer Experience
+
+- Command-line interface.
+- Configurable test scenarios.
+- Human-readable and JSON test reports.
+- Automated testing and CI integration.
 
 ## Project Status
 
-🚧 Early development — implementation in progress.
+**Early development — pre-release.**
+
+The project is not yet a production-ready MCP security scanner or compliance certification tool.
+
+## Initial Milestone
+
+Build an installable Python CLI that:
+
+1. Connects to a real local MCP server.
+2. Discovers and calls a tool.
+3. Distinguishes success from tool execution failure.
+4. Returns a meaningful test result and process exit code.
+5. Runs automated unit and integration tests.
+
+Security tests will follow once the shared MCP connection and test runner are reliable.
 
 ## Roadmap
 
-- [ ] Create example MCP servers
-- [ ] Implement tool failure validation
-- [ ] Add automated tests
-- [ ] Build a CLI
-- [ ] Add CI with GitHub Actions
-- [ ] Publish v0.1.0
+- [ ] Installable Python package and CLI
+- [ ] Real MCP stdio integration
+- [ ] Tool error assertions
+- [ ] Test configuration support
+- [ ] Human-readable and JSON reports
+- [ ] HTTP MCP integration
+- [ ] Authentication enforcement tests
+- [ ] GitHub Actions CI
+- [ ] Contributor documentation
+
+## Security
+
+Only test MCP servers you own or are authorized to assess. Use isolated environments and test credentials. Some future checks may invoke tools with side effects.
 
 ## Contributing
 
-Contributions, bug reports, and suggestions are welcome.
+Contributions, bug reports, reproducible failure scenarios, and documentation improvements are welcome.
+
+Contribution guidelines will be added as the project matures.
 
 ## License
 
@@ -52,4 +85,4 @@ MIT License.
 
 ## Disclaimer
 
-MCP Verdict is an independent open-source project and is not affiliated with the official Model Context Protocol project.
+MCP Verdict is an independent open-source project and is not affiliated with or endorsed by the Model Context Protocol maintainers.
