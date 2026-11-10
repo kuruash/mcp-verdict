@@ -23,6 +23,9 @@ class DiagnosticCode(str, Enum):
     TRANSPORT_DISCONNECT = "transport_disconnect"
     TIMEOUT = "timeout"
     CONFIGURATION_ERROR = "configuration_error"
+    HTTP_STATUS_MISMATCH = "http_status_mismatch"
+    AUTHENTICATION_FAILURE = "authentication_failure"
+    AUTHORIZATION_FAILURE = "authorization_failure"
 
 
 @dataclass(frozen=True)
@@ -43,6 +46,8 @@ class CheckResult:
     actual: ToolOutcome | None
     message: str
     diagnostic_code: DiagnosticCode | None = None
+    expected_http_status: int | None = None
+    actual_http_status: int | None = None
 
 
 @dataclass(frozen=True)

@@ -23,6 +23,8 @@ def _check_document(result: CheckResult) -> dict[str, Any]:
         "diagnostic_code": (
             result.diagnostic_code.value if result.diagnostic_code is not None else None
         ),
+        "expected_http_status": result.expected_http_status,
+        "actual_http_status": result.actual_http_status,
     }
 
 

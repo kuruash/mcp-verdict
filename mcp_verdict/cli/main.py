@@ -6,10 +6,14 @@ from pathlib import Path
 import sys
 
 import anyio
+import httpx
 from anyio import BrokenResourceError
+from mcp.shared.exceptions import McpError
+from mcp.client.streamable_http import StreamableHTTPError
 
 from mcp_verdict.cli.config import CheckConfig, load_configs
 from mcp_verdict.outcomes import assert_tool_outcome
+from mcp_verdict.http import connect_to_http_server, probe_http_status
 from mcp_verdict.reporting import (
     CheckResult,
     CheckStatus,
@@ -36,7 +40,18 @@ def _is_execution_error(error: BaseException) -> bool:
     """Return whether every leaf is a known setup or transport failure."""
     leaves = list(_exception_leaves(error))
     return bool(leaves) and all(
-        isinstance(leaf, (ConnectionError, OSError, TimeoutError)) for leaf in leaves
+        isinstance(
+            leaf,
+            (
+                ConnectionError,
+                OSError,
+                TimeoutError,
+                httpx.HTTPError,
+                McpError,
+                StreamableHTTPError,
+            ),
+        )
+        for leaf in leaves
     )
 
 
@@ -45,6 +60,8 @@ def _error_message(error: BaseException) -> str:
     for leaf in _exception_leaves(error):
         if str(leaf):
             return str(leaf)
+    if isinstance(error, ExceptionGroup):
+        return "MCP transport returned an invalid or incomplete response"
     return error.__class__.__name__
 
 
@@ -61,9 +78,39 @@ def _diagnostic_code(error: BaseException) -> DiagnosticCode:
 async def run_check(config: CheckConfig) -> CheckResult:
     """Execute one configured check and return its typed result."""
     try:
-        async with connect_to_server(
-            config.command, timeout=config.timeout or 10.0
-        ) as connection:
+        if config.expected_http_status is not None:
+            if config.url is None:
+                raise ValueError("HTTP status checks require server.url")
+            actual_status = await probe_http_status(
+                config.url, timeout=config.timeout or 10.0, auth_env=config.auth_env
+            )
+            passed = actual_status == config.expected_http_status
+            return CheckResult(
+                name=config.name,
+                status=CheckStatus.PASS if passed else CheckStatus.FAIL,
+                expected=config.expected,
+                actual=None,
+                message=(
+                    f"Expected HTTP {config.expected_http_status}, observed HTTP {actual_status}"
+                ),
+                diagnostic_code=(
+                    None
+                    if passed
+                    else DiagnosticCode.HTTP_STATUS_MISMATCH
+                ),
+                expected_http_status=config.expected_http_status,
+                actual_http_status=actual_status,
+            )
+        connector = (
+            connect_to_http_server(
+                config.url,
+                timeout=config.timeout or 10.0,
+                auth_env=config.auth_env,
+            )
+            if config.transport == "streamable_http" and config.url is not None
+            else connect_to_server(config.command, timeout=config.timeout or 10.0)
+        )
+        async with connector as connection:
             result = await execute_tool(
                 connection.session,
                 config.tool_name,
@@ -103,7 +150,7 @@ async def run_checks(configs: list[CheckConfig]) -> ExecutionSummary:
     for config in configs:
         try:
             result = await run_check(config)
-        except (ConnectionError, OSError, TimeoutError) as exc:
+        except (ConnectionError, OSError, TimeoutError, httpx.HTTPError) as exc:
             result = CheckResult(
                 name=config.name,
                 status=CheckStatus.ERROR,
@@ -162,7 +209,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
     try:
         summary = anyio.run(run_checks, load_configs(Path(args.config)))
-    except (ConnectionError, OSError, TimeoutError, ValueError) as exc:
+    except (ConnectionError, OSError, TimeoutError, ValueError, httpx.HTTPError) as exc:
         message = safe_message(str(exc))
         if args.format == "json":
             content = dumps(error_document("configuration_error", message))

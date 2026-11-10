@@ -77,7 +77,7 @@ def test_json_configuration_error_uses_error_envelope(tmp_path: Path) -> None:
     assert result.returncode == 2
     assert document == {
         "schema_version": "1",
-        "error": {"code": "configuration_error", "message": "Check 'check' requires 'server' and 'tool' mappings"},
+        "error": {"code": "configuration_error", "message": "Check 'check' requires a 'server' mapping"},
     }
 
 
