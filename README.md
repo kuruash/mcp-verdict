@@ -78,6 +78,56 @@ launches a local executable with the permissions of the current user. Do not
 run MCP Verdict with untrusted configuration files; MCP Verdict intentionally
 does not sandbox or restrict legitimate server commands.
 
+## Reporting
+
+Human-readable terminal output is the default. Use JSON reporting when a CI
+job or another program needs a stable document:
+
+```bash
+mcp-verdict check --config verdict.yaml --format json
+mcp-verdict check --config verdict.yaml --format json --output reports/verdict.json
+```
+
+With `--output`, the JSON report is written atomically (creating parent
+directories) and is not also printed to stdout. Without it, exactly one JSON
+document is printed to stdout. Existing output files are intentionally
+replaced when an explicit output path is supplied.
+
+Reports use schema version `1` and contain summary counts plus ordered checks:
+
+```json
+{
+  "schema_version": "1",
+  "summary": {"passed": 1, "failed": 0, "errored": 0},
+  "checks": [{
+    "name": "ping",
+    "status": "PASS",
+    "expected": "success",
+    "actual": "success",
+    "message": "Expected and observed success",
+    "diagnostic_code": null
+  }]
+}
+```
+
+Exit codes are `0` for all passing checks, `1` for outcome mismatches without
+execution errors, and `2` for configuration, transport, timeout, or other
+execution errors. Diagnostic evidence is limited to bounded, application-
+generated messages with stable categories such as `timeout`,
+`transport_disconnect`, and `outcome_mismatch`. Common token, password, secret,
+and bearer-shaped values are redacted; arbitrary third-party tool output cannot
+be perfectly sanitized and is omitted from reports.
+
+For example, a GitHub Actions job can retain a report artifact:
+
+```yaml
+- run: mcp-verdict check --config verdict.yaml --format json --output verdict.json
+- uses: actions/upload-artifact@v4
+  with:
+    name: mcp-verdict-report
+    path: verdict.json
+```
+
 ## Contributing
 
 Contributions, bug reports, reproducible failure scenarios, and documentation improvements are welcome.

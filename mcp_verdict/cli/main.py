@@ -10,6 +10,14 @@ from anyio import BrokenResourceError
 
 from mcp_verdict.cli.config import CheckConfig, load_configs
 from mcp_verdict.outcomes import assert_tool_outcome
+from mcp_verdict.reporting import (
+    CheckResult,
+    CheckStatus,
+    DiagnosticCode,
+    ExecutionSummary,
+)
+from mcp_verdict.reporting.diagnostics import safe_message
+from mcp_verdict.reporting.json import dumps, error_document, summary_document, write_atomic
 from mcp_verdict.stdio import connect_to_server
 from mcp_verdict.tools import execute_tool
 
@@ -40,8 +48,18 @@ def _error_message(error: BaseException) -> str:
     return error.__class__.__name__
 
 
-async def run_check(config: CheckConfig) -> int:
-    """Execute one configured check and print its PASS or FAIL verdict."""
+def _diagnostic_code(error: BaseException) -> DiagnosticCode:
+    """Map a known execution exception to a stable diagnostic category."""
+    if isinstance(error, TimeoutError):
+        return DiagnosticCode.TIMEOUT
+    message = _error_message(error).lower()
+    if "tool execution" in message or "during tool" in message:
+        return DiagnosticCode.TRANSPORT_DISCONNECT
+    return DiagnosticCode.INITIALIZATION_FAILURE
+
+
+async def run_check(config: CheckConfig) -> CheckResult:
+    """Execute one configured check and return its typed result."""
     try:
         async with connect_to_server(
             config.command, timeout=config.timeout or 10.0
@@ -53,9 +71,22 @@ async def run_check(config: CheckConfig) -> int:
                 timeout=config.timeout,
             )
         verdict = assert_tool_outcome(result, expected=config.expected)
-        status = "PASS" if verdict.passed else "FAIL"
-        print(f"{config.name}: {status}: {verdict.message}")
-        return 0 if verdict.passed else 1
+        return CheckResult(
+            name=config.name,
+            status=CheckStatus.PASS if verdict.passed else CheckStatus.FAIL,
+            expected=verdict.expected,
+            actual=verdict.actual,
+            message=verdict.message,
+            diagnostic_code=(
+                DiagnosticCode.OUTCOME_MISMATCH
+                if not verdict.passed
+                else (
+                    DiagnosticCode.TOOL_ERROR
+                    if verdict.actual.value == "tool_error"
+                    else None
+                )
+            ),
+        )
     except ExceptionGroup as exc:
         if config.timeout is not None and any(
             isinstance(leaf, BrokenResourceError) for leaf in _exception_leaves(exc)
@@ -66,32 +97,36 @@ async def run_check(config: CheckConfig) -> int:
         raise
 
 
-async def run_checks(configs: list[CheckConfig]) -> int:
-    """Execute checks in order and print a summary of their verdicts."""
-    passed = 0
-    failed = 0
-    errored = 0
+async def run_checks(configs: list[CheckConfig]) -> ExecutionSummary:
+    """Execute checks in order and return their typed summary."""
+    results: list[CheckResult] = []
     for config in configs:
         try:
             result = await run_check(config)
         except (ConnectionError, OSError, TimeoutError) as exc:
-            print(f"error: {config.name}: {exc}", file=sys.stderr)
-            errored += 1
-            continue
+            result = CheckResult(
+                name=config.name,
+                status=CheckStatus.ERROR,
+                expected=config.expected,
+                actual=None,
+                message=safe_message(str(exc)),
+                diagnostic_code=_diagnostic_code(exc),
+            )
         except Exception as exc:
             if not _is_execution_error(exc):
                 raise
-            print(f"error: {config.name}: {_error_message(exc)}", file=sys.stderr)
-            errored += 1
-            continue
-        if result == 0:
-            passed += 1
-        else:
-            failed += 1
-    print(f"Summary: {passed} passed, {failed} failed, {errored} errored")
-    if errored:
-        return 2
-    return 0 if failed == 0 else 1
+            result = CheckResult(
+                name=config.name,
+                status=CheckStatus.ERROR,
+                expected=config.expected,
+                actual=None,
+                message=safe_message(_error_message(exc)),
+                diagnostic_code=DiagnosticCode.TRANSPORT_DISCONNECT,
+            )
+        results.append(result)
+
+    summary = ExecutionSummary(tuple(results))
+    return summary
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -103,6 +138,10 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command")
     check = commands.add_parser("check", help="run a configured MCP check")
     check.add_argument("--config", required=True, help="path to a YAML configuration")
+    check.add_argument(
+        "--format", choices=("human", "json"), default="human", help="report format"
+    )
+    check.add_argument("--output", help="write a JSON report to this path")
     return parser
 
 
@@ -118,8 +157,54 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command != "check":
         return 0
-    try:
-        return anyio.run(run_checks, load_configs(Path(args.config)))
-    except (ConnectionError, OSError, TimeoutError, ValueError) as exc:
-        print(f"error: {exc}", file=sys.stderr)
+    if args.output and args.format != "json":
+        print("error: --output requires --format json", file=sys.stderr)
         return 2
+    try:
+        summary = anyio.run(run_checks, load_configs(Path(args.config)))
+    except (ConnectionError, OSError, TimeoutError, ValueError) as exc:
+        message = safe_message(str(exc))
+        if args.format == "json":
+            content = dumps(error_document("configuration_error", message))
+            if args.output:
+                try:
+                    write_atomic(Path(args.output), content)
+                except OSError as write_exc:
+                    write_message = (
+                        f"could not write report: {safe_message(str(write_exc))}"
+                    )
+                    print(f"error: {write_message}", file=sys.stderr)
+                    print(
+                        dumps(error_document("report_write_error", write_message)),
+                        end="",
+                    )
+            else:
+                print(content, end="")
+        else:
+            print(f"error: {message}", file=sys.stderr)
+        return 2
+    if args.format == "human":
+        for result in summary.results:
+            if result.status is CheckStatus.ERROR:
+                print(f"error: {result.name}: {result.message}", file=sys.stderr)
+            else:
+                print(f"{result.name}: {result.status.value}: {result.message}")
+        print(
+            f"Summary: {summary.passed} passed, "
+            f"{summary.failed} failed, {summary.errored} errored"
+        )
+        return summary.exit_code
+    content = dumps(summary_document(summary))
+    if args.output:
+        try:
+            write_atomic(Path(args.output), content)
+        except OSError as exc:
+            message = f"could not write report: {safe_message(str(exc))}"
+            print(f"error: {message}", file=sys.stderr)
+            print(
+                dumps(error_document("report_write_error", message)), end=""
+            )
+            return 2
+    else:
+        print(content, end="")
+    return summary.exit_code
