@@ -1,0 +1,10 @@
+checks:
+  - name: known-failure
+    server:
+      command:
+        - python
+        - examples/error_handling/server.py
+    tool:
+      name: known_failure
+      arguments: {}
+    expected: tool_error

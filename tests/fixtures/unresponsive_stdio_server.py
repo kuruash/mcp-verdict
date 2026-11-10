@@ -4,4 +4,5 @@ import time
 
 
 if __name__ == "__main__":
-    time.sleep(60)
+    # Stay alive long enough to exceed the client timeout, then exit naturally.
+    time.sleep(5)
