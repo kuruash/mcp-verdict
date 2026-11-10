@@ -1,0 +1,21 @@
+checks:
+  - name: ping-success
+    server:
+      command:
+        - python
+        - examples/basic_stdio/server.py
+    tool:
+      name: ping
+      arguments: {}
+    expected: success
+  - name: add-success
+    server:
+      command:
+        - python
+        - examples/basic_stdio/server.py
+    tool:
+      name: add
+      arguments:
+        a: 7
+        b: 5
+    expected: success

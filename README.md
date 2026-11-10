@@ -73,6 +73,11 @@ Security tests will follow once the shared MCP connection and test runner are re
 
 Only test MCP servers you own or are authorized to assess. Use isolated environments and test credentials. Some future checks may invoke tools with side effects.
 
+Treat every YAML configuration as executable input. The `server.command` field
+launches a local executable with the permissions of the current user. Do not
+run MCP Verdict with untrusted configuration files; MCP Verdict intentionally
+does not sandbox or restrict legitimate server commands.
+
 ## Contributing
 
 Contributions, bug reports, reproducible failure scenarios, and documentation improvements are welcome.

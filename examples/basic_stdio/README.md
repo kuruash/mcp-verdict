@@ -16,8 +16,20 @@ python -m pip install -e '.[test]'
 
 ## Run with MCP Verdict
 
-The current Python API connects to a server command asynchronously. From the
-repository root, run:
+From the repository root, run the checked example configuration:
+
+```bash
+mcp-verdict check --config examples/basic_stdio/verdict.yaml
+```
+
+Expected output includes two PASS lines and:
+
+```text
+Summary: 2 passed, 0 failed
+```
+
+The configuration runs successful `ping` and `add` checks against the local
+server. To connect through the Python API directly, run:
 
 ```bash
 python - <<'PY'
@@ -42,3 +54,9 @@ PY
 
 The command prints a negotiated MCP protocol version and a tool list containing
 `add` and `ping`. The connection context starts and stops the example server.
+
+## Security note
+
+`verdict.yaml` launches the command in its `server.command` field with the
+current user's permissions. Run only trusted configurations; MCP Verdict does
+not sandbox configured commands.
