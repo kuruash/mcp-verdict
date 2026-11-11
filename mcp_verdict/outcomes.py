@@ -1,12 +1,12 @@
 """Explicit outcome classification for MCP tool results."""
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from mcp.types import CallToolResult
 
 
-class ToolOutcome(str, Enum):
+class ToolOutcome(StrEnum):
     """Expected or observed protocol-level outcome of a tool call."""
 
     SUCCESS = "success"
@@ -37,9 +37,7 @@ class OutcomeVerdict:
         return f"Expected {self.expected.value}, observed {self.actual.value}"
 
 
-def assert_tool_outcome(
-    result: CallToolResult, *, expected: ToolOutcome
-) -> OutcomeVerdict:
+def assert_tool_outcome(result: CallToolResult, *, expected: ToolOutcome) -> OutcomeVerdict:
     """Compare a declared outcome with the MCP result's explicit error flag.
 
     Args:

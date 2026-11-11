@@ -10,9 +10,7 @@ def test_basic_stdio_example_exposes_ping_and_add() -> None:
     """Connect to the example and discover both documented tools."""
     from mcp_verdict.stdio import connect_to_server
 
-    server_path = (
-        Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
-    )
+    server_path = Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
 
     async def discover_tools() -> None:
         async with connect_to_server([sys.executable, str(server_path)]) as connection:

@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pytest
 
-
 FIXTURE = Path(__file__).parent / "fixtures" / "auth_http_server.py"
 CLI = Path(sys.executable).parent / "mcp-verdict"
 

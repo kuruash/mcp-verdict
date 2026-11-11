@@ -4,7 +4,6 @@ import os
 
 from mcp.server.fastmcp import FastMCP
 
-
 server = FastMCP("mcp-verdict-disconnecting-tool")
 
 

@@ -12,9 +12,7 @@ def test_executes_ping_tool_successfully() -> None:
     from mcp_verdict.stdio import connect_to_server
     from mcp_verdict.tools import execute_tool
 
-    server_path = (
-        Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
-    )
+    server_path = Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
 
     async def invoke_ping() -> None:
         async with connect_to_server([sys.executable, str(server_path)]) as connection:
@@ -31,9 +29,7 @@ def test_executes_add_tool_with_arguments() -> None:
     from mcp_verdict.stdio import connect_to_server
     from mcp_verdict.tools import execute_tool
 
-    server_path = (
-        Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
-    )
+    server_path = Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
 
     async def invoke_add() -> None:
         async with connect_to_server([sys.executable, str(server_path)]) as connection:
@@ -54,9 +50,7 @@ def test_nonexistent_tool_returns_tool_error_result() -> None:
     from mcp_verdict.stdio import connect_to_server
     from mcp_verdict.tools import execute_tool
 
-    server_path = (
-        Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
-    )
+    server_path = Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
 
     async def invoke_missing_tool() -> None:
         async with connect_to_server([sys.executable, str(server_path)]) as connection:
@@ -116,9 +110,7 @@ def test_invalid_tool_arguments_preserve_server_error_result() -> None:
     from mcp_verdict.stdio import connect_to_server
     from mcp_verdict.tools import execute_tool
 
-    server_path = (
-        Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
-    )
+    server_path = Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
 
     async def invoke_with_invalid_arguments() -> None:
         async with connect_to_server([sys.executable, str(server_path)]) as connection:
@@ -195,9 +187,7 @@ def test_sequential_tool_calls_reuse_live_session() -> None:
     from mcp_verdict.stdio import connect_to_server
     from mcp_verdict.tools import execute_tool
 
-    server_path = (
-        Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
-    )
+    server_path = Path(__file__).parents[1] / "examples" / "basic_stdio" / "server.py"
 
     async def invoke_sequentially() -> None:
         async with connect_to_server([sys.executable, str(server_path)]) as connection:

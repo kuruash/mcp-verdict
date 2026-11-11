@@ -4,7 +4,6 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-
 server = FastMCP("mcp-verdict-structured-tool")
 
 

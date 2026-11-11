@@ -54,7 +54,9 @@ def test_summary_counts_and_exit_precedence() -> None:
     """Count mixed results and give execution errors precedence over mismatches."""
     results = (
         CheckResult("pass", CheckStatus.PASS, ToolOutcome.SUCCESS, ToolOutcome.SUCCESS, "ok"),
-        CheckResult("fail", CheckStatus.FAIL, ToolOutcome.TOOL_ERROR, ToolOutcome.SUCCESS, "mismatch"),
+        CheckResult(
+            "fail", CheckStatus.FAIL, ToolOutcome.TOOL_ERROR, ToolOutcome.SUCCESS, "mismatch"
+        ),
         CheckResult("error", CheckStatus.ERROR, ToolOutcome.SUCCESS, None, "transport"),
     )
     summary = ExecutionSummary(results)
@@ -69,7 +71,11 @@ def test_summary_counts_and_exit_precedence() -> None:
 def test_failure_without_error_uses_exit_code_one() -> None:
     """Use exit code one when only outcome mismatches exist."""
     summary = ExecutionSummary(
-        (CheckResult("fail", CheckStatus.FAIL, ToolOutcome.SUCCESS, ToolOutcome.TOOL_ERROR, "mismatch"),)
+        (
+            CheckResult(
+                "fail", CheckStatus.FAIL, ToolOutcome.SUCCESS, ToolOutcome.TOOL_ERROR, "mismatch"
+            ),
+        )
     )
 
     assert summary.exit_code == 1

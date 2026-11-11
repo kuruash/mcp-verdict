@@ -1,19 +1,19 @@
 """Argument parsing and command dispatch for MCP Verdict."""
 
 import argparse
+import sys
 from collections.abc import Sequence
 from pathlib import Path
-import sys
 
 import anyio
 import httpx
 from anyio import BrokenResourceError
-from mcp.shared.exceptions import McpError
 from mcp.client.streamable_http import StreamableHTTPError
+from mcp.shared.exceptions import McpError
 
 from mcp_verdict.cli.config import CheckConfig, load_configs
-from mcp_verdict.outcomes import assert_tool_outcome
 from mcp_verdict.http import connect_to_http_server, probe_http_status
+from mcp_verdict.outcomes import assert_tool_outcome
 from mcp_verdict.reporting import (
     CheckResult,
     CheckStatus,
@@ -93,11 +93,7 @@ async def run_check(config: CheckConfig) -> CheckResult:
                 message=(
                     f"Expected HTTP {config.expected_http_status}, observed HTTP {actual_status}"
                 ),
-                diagnostic_code=(
-                    None
-                    if passed
-                    else DiagnosticCode.HTTP_STATUS_MISMATCH
-                ),
+                diagnostic_code=(None if passed else DiagnosticCode.HTTP_STATUS_MISMATCH),
                 expected_http_status=config.expected_http_status,
                 actual_http_status=actual_status,
             )
@@ -127,20 +123,14 @@ async def run_check(config: CheckConfig) -> CheckResult:
             diagnostic_code=(
                 DiagnosticCode.OUTCOME_MISMATCH
                 if not verdict.passed
-                else (
-                    DiagnosticCode.TOOL_ERROR
-                    if verdict.actual.value == "tool_error"
-                    else None
-                )
+                else (DiagnosticCode.TOOL_ERROR if verdict.actual.value == "tool_error" else None)
             ),
         )
     except ExceptionGroup as exc:
         if config.timeout is not None and any(
             isinstance(leaf, BrokenResourceError) for leaf in _exception_leaves(exc)
         ):
-            raise TimeoutError(
-                f"MCP check timed out after {config.timeout} seconds"
-            ) from exc
+            raise TimeoutError(f"MCP check timed out after {config.timeout} seconds") from exc
         raise
 
 
@@ -185,9 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command")
     check = commands.add_parser("check", help="run a configured MCP check")
     check.add_argument("--config", required=True, help="path to a YAML configuration")
-    check.add_argument(
-        "--format", choices=("human", "json"), default="human", help="report format"
-    )
+    check.add_argument("--format", choices=("human", "json"), default="human", help="report format")
     check.add_argument("--output", help="write a JSON report to this path")
     return parser
 
@@ -217,9 +205,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 try:
                     write_atomic(Path(args.output), content)
                 except OSError as write_exc:
-                    write_message = (
-                        f"could not write report: {safe_message(str(write_exc))}"
-                    )
+                    write_message = f"could not write report: {safe_message(str(write_exc))}"
                     print(f"error: {write_message}", file=sys.stderr)
                     print(
                         dumps(error_document("report_write_error", write_message)),
@@ -237,8 +223,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             else:
                 print(f"{result.name}: {result.status.value}: {result.message}")
         print(
-            f"Summary: {summary.passed} passed, "
-            f"{summary.failed} failed, {summary.errored} errored"
+            f"Summary: {summary.passed} passed, {summary.failed} failed, {summary.errored} errored"
         )
         return summary.exit_code
     content = dumps(summary_document(summary))
@@ -248,9 +233,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         except OSError as exc:
             message = f"could not write report: {safe_message(str(exc))}"
             print(f"error: {message}", file=sys.stderr)
-            print(
-                dumps(error_document("report_write_error", message)), end=""
-            )
+            print(dumps(error_document("report_write_error", message)), end="")
             return 2
     else:
         print(content, end="")

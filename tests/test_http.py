@@ -12,7 +12,6 @@ import pytest
 from mcp_verdict.http import connect_to_http_server, validate_url
 from mcp_verdict.tools import execute_tool
 
-
 FIXTURE = Path(__file__).parent / "fixtures" / "http_stdio_server.py"
 
 

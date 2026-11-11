@@ -37,9 +37,7 @@ async def execute_tool(
         with anyio.fail_after(timeout):
             return await session.call_tool(name, arguments=arguments)
     except TimeoutError as exc:
-        raise TimeoutError(
-            f"MCP tool {name!r} timed out after {timeout} seconds"
-        ) from exc
+        raise TimeoutError(f"MCP tool {name!r} timed out after {timeout} seconds") from exc
     except McpError as exc:
         if str(exc) != "Connection closed":
             raise

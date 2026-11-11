@@ -1,10 +1,10 @@
 """Streamable HTTP MCP connections using the official MCP SDK transport."""
 
+import logging
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-import os
-import logging
 from urllib.parse import urlparse
 
 import anyio
@@ -84,9 +84,7 @@ async def connect_to_http_server(
         sdk_logger.disabled = was_disabled
 
 
-async def probe_http_status(
-    url: str, *, timeout: float = 10.0, auth_env: str | None = None
-) -> int:
+async def probe_http_status(url: str, *, timeout: float = 10.0, auth_env: str | None = None) -> int:
     """Probe an HTTP endpoint and return its status without parsing MCP payloads."""
     validate_url(url)
     headers: dict[str, str] = {}

@@ -11,7 +11,6 @@ import pytest
 
 from mcp_verdict.http import connect_to_http_server, probe_http_status
 
-
 FIXTURE = Path(__file__).parent / "fixtures" / "http_edge_server.py"
 CLI = Path(sys.executable).parent / "mcp-verdict"
 
@@ -48,6 +47,7 @@ def edge_server():
 )
 def test_http_status_probe_returns_actual_status(edge_server, mode: str, status: int) -> None:
     """Assert controlled HTTP status responses without parsing exception text."""
+
     async def exercise() -> None:
         assert await probe_http_status(edge_server(mode), timeout=1) == status
 
@@ -57,6 +57,7 @@ def test_http_status_probe_returns_actual_status(edge_server, mode: str, status:
 @pytest.mark.parametrize("mode", ["invalid-json", "invalid-rpc", "content-type", "truncated"])
 def test_malformed_http_responses_are_bounded_errors(edge_server, mode: str) -> None:
     """Convert malformed transport responses into bounded SDK failures."""
+
     async def exercise() -> None:
         with pytest.raises(Exception):
             async with connect_to_http_server(edge_server(mode), timeout=0.5):
@@ -68,6 +69,7 @@ def test_malformed_http_responses_are_bounded_errors(edge_server, mode: str) -> 
 @pytest.mark.parametrize("mode", ["slow", "disconnect", "protocol-version"])
 def test_http_session_failures_do_not_hang(edge_server, mode: str) -> None:
     """Bound initialization failures from slow, disconnected, or invalid servers."""
+
     async def exercise() -> None:
         with pytest.raises(Exception):
             async with connect_to_http_server(edge_server(mode), timeout=0.5):
