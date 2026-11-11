@@ -87,9 +87,7 @@ def test_unresponsive_server_times_out_during_initialization() -> None:
 
     async def attempt_connection() -> None:
         with anyio.fail_after(3):
-            async with connect_to_server(
-                [sys.executable, str(server_path)], timeout=0.2
-            ):
+            async with connect_to_server([sys.executable, str(server_path)], timeout=0.2):
                 pytest.fail("an unresponsive server must not yield a session")
 
     with pytest.raises(TimeoutError, match="MCP server initialization timed out"):

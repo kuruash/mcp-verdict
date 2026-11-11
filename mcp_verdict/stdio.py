@@ -66,10 +66,6 @@ async def connect_to_server(
         except* McpError as exc_group:
             if initialized:
                 raise
-            raise ConnectionError(
-                "MCP server exited during initialization"
-            ) from exc_group
+            raise ConnectionError("MCP server exited during initialization") from exc_group
     except FileNotFoundError as exc:
-        raise ConnectionError(
-            f"Could not start MCP server executable: {command[0]!r}"
-        ) from exc
+        raise ConnectionError(f"Could not start MCP server executable: {command[0]!r}") from exc

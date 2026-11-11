@@ -8,7 +8,6 @@ from mcp.server.fastmcp import FastMCP
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-
 server = FastMCP("mcp-verdict-http-security")
 
 

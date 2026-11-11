@@ -54,20 +54,18 @@ def _parse_check(data: Any, *, name: str = "check") -> CheckConfig:
     expected = data.get("expected", "success" if expected_http_status is not None else None)
     timeout = data.get("timeout")
     if transport not in {"stdio", "streamable_http"}:
-        raise ValueError(
-            f"Check {name!r}: server.transport must be 'stdio' or 'streamable_http'"
-        )
+        raise ValueError(f"Check {name!r}: server.transport must be 'stdio' or 'streamable_http'")
     if transport == "stdio":
-        if not isinstance(command, list) or not command or not all(
-            isinstance(item, str) for item in command
+        if (
+            not isinstance(command, list)
+            or not command
+            or not all(isinstance(item, str) for item in command)
         ):
             raise ValueError(f"Check {name!r}: server.command must be a non-empty list")
         if "url" in server:
             raise ValueError(f"Check {name!r}: stdio server cannot define server.url")
         if "auth_env" in server:
-            raise ValueError(
-                f"Check {name!r}: stdio server cannot define server.auth_env"
-            )
+            raise ValueError(f"Check {name!r}: stdio server cannot define server.auth_env")
     else:
         if not isinstance(url, str) or not url:
             raise ValueError(f"Check {name!r}: HTTP server requires server.url")
@@ -79,6 +77,8 @@ def _parse_check(data: Any, *, name: str = "check") -> CheckConfig:
             raise ValueError(f"Check {name!r}: tool.name must be a non-empty string")
     if not isinstance(arguments, dict):
         raise ValueError(f"Check {name!r}: tool.arguments must be a mapping")
+    if not isinstance(expected, str):
+        raise ValueError(f"Check {name!r}: expected must be 'success' or 'tool_error'")
     if timeout is not None and (
         isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0
     ):
@@ -86,9 +86,7 @@ def _parse_check(data: Any, *, name: str = "check") -> CheckConfig:
     try:
         expected_outcome = ToolOutcome(expected)
     except ValueError as exc:
-        raise ValueError(
-            f"Check {name!r}: expected must be 'success' or 'tool_error'"
-        ) from exc
+        raise ValueError(f"Check {name!r}: expected must be 'success' or 'tool_error'") from exc
 
     if auth_env is not None and (not isinstance(auth_env, str) or not auth_env):
         raise ValueError(f"Check {name!r}: server.auth_env must be a non-empty string")

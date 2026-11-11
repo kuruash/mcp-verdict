@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+
 def test_mcp_verdict_help() -> None:
     """Show usage information from the installed console script."""
     cli_path = Path(sys.executable).parent / "mcp-verdict"
@@ -235,9 +236,7 @@ def test_check_runs_multiple_scenarios_and_reports_summary(tmp_path: Path) -> No
     )
 
     assert result.returncode == 1
-    assert result.stdout.index("ping-success") < result.stdout.index(
-        "unexpected-success"
-    )
+    assert result.stdout.index("ping-success") < result.stdout.index("unexpected-success")
     assert "Summary: 1 passed, 1 failed" in result.stdout
 
 
@@ -257,7 +256,7 @@ def test_initialization_timeout_returns_setup_error(tmp_path: Path) -> None:
         check=False,
         capture_output=True,
         text=True,
-            timeout=8,
+        timeout=8,
     )
 
     assert result.returncode == 2
@@ -297,7 +296,10 @@ def test_tool_timeout_returns_setup_error(tmp_path: Path) -> None:
         ),
         (
             "disconnecting-server",
-            [sys.executable, str(Path(__file__).parent / "fixtures" / "disconnecting_tool_server.py")],
+            [
+                sys.executable,
+                str(Path(__file__).parent / "fixtures" / "disconnecting_tool_server.py"),
+            ],
         ),
     ],
 )

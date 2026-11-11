@@ -8,7 +8,6 @@ from pathlib import Path
 
 from mcp_verdict.reporting.json import write_atomic
 
-
 ROOT = Path(__file__).parents[1]
 CLI = Path(sys.executable).parent / "mcp-verdict"
 
@@ -77,7 +76,10 @@ def test_json_configuration_error_uses_error_envelope(tmp_path: Path) -> None:
     assert result.returncode == 2
     assert document == {
         "schema_version": "1",
-        "error": {"code": "configuration_error", "message": "Check 'check' requires a 'server' mapping"},
+        "error": {
+            "code": "configuration_error",
+            "message": "Check 'check' requires a 'server' mapping",
+        },
     }
 
 

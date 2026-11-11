@@ -1,12 +1,12 @@
 """Typed internal results and summaries for MCP Verdict executions."""
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from mcp_verdict.outcomes import ToolOutcome
 
 
-class CheckStatus(str, Enum):
+class CheckStatus(StrEnum):
     """Terminal status of one configured check."""
 
     PASS = "PASS"
@@ -14,7 +14,7 @@ class CheckStatus(str, Enum):
     ERROR = "ERROR"
 
 
-class DiagnosticCode(str, Enum):
+class DiagnosticCode(StrEnum):
     """Stable category for safe check diagnostics."""
 
     OUTCOME_MISMATCH = "outcome_mismatch"

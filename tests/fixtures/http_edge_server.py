@@ -1,10 +1,10 @@
 """Deterministic loopback HTTP fixture for transport regression tests."""
 
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 import sys
 import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -43,7 +43,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", "100")
             self.end_headers()
-            self.wfile.write(b"{}"); self.wfile.flush()
+            self.wfile.write(b"{}")
+            self.wfile.flush()
             self.connection.close()
             os._exit(0)
         elif self.mode == "slow":
@@ -54,7 +55,13 @@ class Handler(BaseHTTPRequestHandler):
         elif self.mode == "protocol-version":
             self._respond(
                 200,
-                json.dumps({"jsonrpc": "2.0", "id": 0, "error": {"code": -32600, "message": "unsupported protocol version"}}).encode(),
+                json.dumps(
+                    {
+                        "jsonrpc": "2.0",
+                        "id": 0,
+                        "error": {"code": -32600, "message": "unsupported protocol version"},
+                    }
+                ).encode(),
                 "application/json",
             )
         elif self.mode == "redirect":

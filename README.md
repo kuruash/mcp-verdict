@@ -2,170 +2,133 @@
 
 **Test how your MCP servers behave when things go wrong.**
 
-MCP Verdict is an open-source developer tool for testing the security boundaries and failure-handling behavior of Model Context Protocol (MCP) servers.
+MCP Verdict is an open-source Python CLI for testing failure handling and
+selected security behavior in Model Context Protocol (MCP) servers. It runs
+repeatable YAML-defined checks against servers you own or are authorized to
+assess.
 
-The project aims to help developers catch incorrect error reporting, unexpected authorization behavior, and regressions before deploying MCP servers to production.
+MCP Verdict is a test runner, not a general MCP client or a comprehensive
+security scanner. It does not provide full OAuth/JWT auditing, compliance
+certification, sandboxing, or remote target discovery.
 
 ## Why MCP Verdict?
 
-MCP servers connect AI applications to tools, APIs, databases, and external services.
+MCP tools can fail in ways that are difficult to exercise repeatedly: a server
+may return success while reporting a failure, omit an expected tool error, or
+handle authentication and authorization boundaries incorrectly. These behaviors
+can regress as a server changes.
 
-When an MCP server receives an invalid request, encounters a tool execution failure, or receives an unauthorized request, it must respond according to its defined behavior and applicable protocol requirements.
+MCP Verdict makes those cases explicit in version-controlled configuration.
+Instead of maintaining one-off failure-testing scripts, developers can run the
+same local STDIO or Streamable HTTP scenarios in development and CI.
 
-Incorrect behavior can lead to confusing errors, security weaknesses, and unreliable AI applications.
+## Features
 
-MCP Verdict aims to make these failure scenarios reproducible and testable.
+- STDIO and Streamable HTTP MCP connections.
+- MCP tool outcome assertions based on the protocol `isError` field.
+- HTTP authentication and authorization status assertions, including 401 and
+  403 expectations.
+- YAML-defined single or multiple checks with per-check timeouts.
+- PASS, FAIL, and ERROR results with CI-friendly exit codes.
+- Human-readable terminal output and schema-versioned JSON reports.
+- Atomic report files and bounded diagnostic redaction.
 
-## Planned Features
+## Quick start
 
-### Error-Handling Tests
-
-- Verify expected tool execution errors.
-- Distinguish successful results, tool errors, and protocol errors.
-- Check incorrect or missing error indicators.
-- Detect regressions in error-handling behavior.
-
-### Security Tests
-
-- Verify that declared protected operations reject unauthenticated requests.
-- Test invalid authentication credentials.
-- Test authorization boundaries using explicitly configured test identities.
-- Check applicable MCP authorization requirements.
-
-### Developer Experience
-
-- Command-line interface.
-- Configurable test scenarios.
-- Human-readable and JSON test reports.
-- Automated testing and CI integration.
-
-## Project Status
-
-**Early development — pre-release.**
-
-The project is not yet a production-ready MCP security scanner or compliance certification tool.
-
-## Initial Milestone
-
-Build an installable Python CLI that:
-
-1. Connects to a real local MCP server.
-2. Discovers and calls a tool.
-3. Distinguishes success from tool execution failure.
-4. Returns a meaningful test result and process exit code.
-5. Runs automated unit and integration tests.
-
-Security tests will follow once the shared MCP connection and test runner are reliable.
-
-## Roadmap
-
-- [ ] Installable Python package and CLI
-- [ ] Real MCP stdio integration
-- [ ] Tool error assertions
-- [ ] Test configuration support
-- [ ] Human-readable and JSON reports
-- [ ] HTTP MCP integration
-- [ ] Authentication enforcement tests
-- [ ] GitHub Actions CI
-- [ ] Contributor documentation
-
-## Security
-
-Only test MCP servers you own or are authorized to assess. Use isolated environments and test credentials. Some future checks may invoke tools with side effects.
-
-Treat every YAML configuration as executable input. The `server.command` field
-launches a local executable with the permissions of the current user. Do not
-run MCP Verdict with untrusted configuration files; MCP Verdict intentionally
-does not sandbox or restrict legitimate server commands.
-
-## Reporting
-
-Human-readable terminal output is the default. Use JSON reporting when a CI
-job or another program needs a stable document:
+Requirements: Python 3.11 or 3.12. From the repository root:
 
 ```bash
-mcp-verdict check --config verdict.yaml --format json
-mcp-verdict check --config verdict.yaml --format json --output reports/verdict.json
+python -m pip install -e .
+mcp-verdict check --config examples/basic_stdio/verdict.yaml
 ```
 
-With `--output`, the JSON report is written atomically (creating parent
-directories) and is not also printed to stdout. Without it, exactly one JSON
-document is printed to stdout. Existing output files are intentionally
-replaced when an explicit output path is supplied.
+The Basic STDIO example uses a local FastMCP server and needs no credentials or
+network access. Its output is:
 
-Reports use schema version `1` and contain summary counts plus ordered checks:
-
-```json
-{
-  "schema_version": "1",
-  "summary": {"passed": 1, "failed": 0, "errored": 0},
-  "checks": [{
-    "name": "ping",
-    "status": "PASS",
-    "expected": "success",
-    "actual": "success",
-    "message": "Expected and observed success",
-    "diagnostic_code": null
-  }]
-}
+```text
+ping-success: PASS: Expected and observed success
+add-success: PASS: Expected and observed success
+Summary: 2 passed, 0 failed, 0 errored
 ```
 
-Exit codes are `0` for all passing checks, `1` for outcome mismatches without
-execution errors, and `2` for configuration, transport, timeout, or other
-execution errors. Diagnostic evidence is limited to bounded, application-
-generated messages with stable categories such as `timeout`,
-`transport_disconnect`, and `outcome_mismatch`. Common token, password, secret,
-and bearer-shaped values are redacted; arbitrary third-party tool output cannot
-be perfectly sanitized and is omitted from reports.
+For development and tests, install the test tools too:
 
-For example, a GitHub Actions job can retain a report artifact:
-
-```yaml
-- run: mcp-verdict check --config verdict.yaml --format json --output verdict.json
-- uses: actions/upload-artifact@v4
-  with:
-    name: mcp-verdict-report
-    path: verdict.json
+```bash
+python -m pip install -e '.[test]'
 ```
 
-## Streamable HTTP and security checks
+## Configuration
 
-Checks may use the installed MCP Python SDK's Streamable HTTP client:
+Existing configurations default to STDIO. A minimal check is:
 
 ```yaml
 server:
-  transport: streamable_http
-  url: http://127.0.0.1:8000/mcp
-  auth_env: MCP_TOKEN
+  command: [python, examples/basic_stdio/server.py]
 tool:
   name: ping
   arguments: {}
 expected: success
 ```
 
-Omitting `transport` keeps the existing STDIO configuration behavior. HTTP
-security probes can declare an explicit expected status, for example
-`expected_http_status: 401`; matching 401 is PASS, an unexpected status is
-FAIL, and an unreachable endpoint is ERROR. These HTTP assertions are separate
-from MCP tool `isError` outcomes. Authentication values are read only from the
-named environment variable and are never written to reports.
+`server.command` starts the local MCP server, `tool.name` selects a tool,
+`arguments` supplies its JSON-compatible arguments, and `expected` is either
+`success` or `tool_error`.
 
-This release is tested with the installed MCP Python SDK 1.x Streamable HTTP
-client API (`streamable_http_client`) and its negotiated MCP protocol behavior.
-The SDK enforces same-origin redirect rules; MCP Verdict does not implement a
-custom transport or claim comprehensive OAuth/JWT validation. See
-`examples/http_security/` for a loopback-only fixture.
+See [Configuration](docs/configuration.md) for multiple checks, HTTP servers,
+timeouts, authentication environment variables, and validation rules.
+
+## Results and exit codes
+
+| Result | Meaning |
+| --- | --- |
+| PASS | The observed behavior matched the explicit expectation. |
+| FAIL | The server responded, but the outcome or expected HTTP status differed. |
+| ERROR | Configuration, setup, timeout, or transport execution failed. |
+
+The process exits with `0` when all checks pass, `1` when at least one check
+fails without execution errors, and `2` when any check errors. See
+[Reporting](docs/reporting.md) for terminal output, JSON schema version 1, and
+atomic report files.
+
+## Documentation
+
+- [Configuration guide](docs/configuration.md)
+- [STDIO and Streamable HTTP transports](docs/transports.md)
+- [Security testing](docs/security-testing.md)
+- [Reporting and JSON schema](docs/reporting.md)
+- [Architecture guide](docs/architecture.md)
+- [Runnable examples](examples/)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
+
+## Project status
+
+The current development version is `0.1.0`; initial release preparation is in
+progress. The implemented checks are intended for repeatable local and
+authorized testing, not comprehensive security auditing or compliance
+certification.
 
 ## Contributing
 
-Contributions, bug reports, reproducible failure scenarios, and documentation improvements are welcome.
+Bug reports, focused test scenarios, and documentation improvements are
+welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) for setup, quality
+checks, and fixture conventions.
 
-Contribution guidelines will be added as the project matures.
+## Security
+
+Test only servers you own or are authorized to assess. STDIO YAML configurations
+can execute local commands with the current user's permissions; never run an
+untrusted YAML file. Keep credentials in environment variables and treat
+diagnostic output carefully. Read the [security policy](SECURITY.md) and the
+[security-testing guide](docs/security-testing.md) before testing protected
+servers.
 
 ## License
 
-MIT License.
+[MIT License](LICENSE)
 
 ## Disclaimer
 
-MCP Verdict is an independent open-source project and is not affiliated with or endorsed by the Model Context Protocol maintainers.
+MCP Verdict is an independent open-source project and is not affiliated with or
+endorsed by the Model Context Protocol maintainers.

@@ -8,7 +8,6 @@ from typing import Any
 
 from mcp_verdict.reporting import CheckResult, ExecutionSummary
 
-
 SCHEMA_VERSION = "1"
 
 

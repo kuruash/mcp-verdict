@@ -4,7 +4,6 @@ import time
 
 from mcp.server.fastmcp import FastMCP
 
-
 server = FastMCP("mcp-verdict-slow-tool")
 
 

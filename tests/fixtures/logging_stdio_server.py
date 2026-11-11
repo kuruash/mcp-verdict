@@ -4,7 +4,6 @@ import sys
 
 from mcp.server.fastmcp import FastMCP
 
-
 server = FastMCP("mcp-verdict-logging-test-server")
 
 
