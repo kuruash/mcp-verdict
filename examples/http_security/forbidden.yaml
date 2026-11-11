@@ -1,0 +1,6 @@
+server:
+  transport: streamable_http
+  url: http://127.0.0.1:8000/mcp
+  auth_env: MCP_VERDICT_EXAMPLE_TOKEN
+
+expected_http_status: 403

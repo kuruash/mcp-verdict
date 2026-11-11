@@ -128,6 +128,34 @@ For example, a GitHub Actions job can retain a report artifact:
     path: verdict.json
 ```
 
+## Streamable HTTP and security checks
+
+Checks may use the installed MCP Python SDK's Streamable HTTP client:
+
+```yaml
+server:
+  transport: streamable_http
+  url: http://127.0.0.1:8000/mcp
+  auth_env: MCP_TOKEN
+tool:
+  name: ping
+  arguments: {}
+expected: success
+```
+
+Omitting `transport` keeps the existing STDIO configuration behavior. HTTP
+security probes can declare an explicit expected status, for example
+`expected_http_status: 401`; matching 401 is PASS, an unexpected status is
+FAIL, and an unreachable endpoint is ERROR. These HTTP assertions are separate
+from MCP tool `isError` outcomes. Authentication values are read only from the
+named environment variable and are never written to reports.
+
+This release is tested with the installed MCP Python SDK 1.x Streamable HTTP
+client API (`streamable_http_client`) and its negotiated MCP protocol behavior.
+The SDK enforces same-origin redirect rules; MCP Verdict does not implement a
+custom transport or claim comprehensive OAuth/JWT validation. See
+`examples/http_security/` for a loopback-only fixture.
+
 ## Contributing
 
 Contributions, bug reports, reproducible failure scenarios, and documentation improvements are welcome.

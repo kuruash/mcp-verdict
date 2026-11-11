@@ -1,0 +1,5 @@
+server:
+  transport: streamable_http
+  url: http://127.0.0.1:8000/mcp
+
+expected_http_status: 401
