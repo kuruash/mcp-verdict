@@ -1,5 +1,13 @@
 # MCP Verdict
 
+
+[![PyPI Version](https://img.shields.io/pypi/v/mcp-verdict)](https://pypi.org/project/mcp-verdict/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/mcp-verdict)](https://pypi.org/project/mcp-verdict/)
+[![CI](https://github.com/kuruash/mcp-verdict/actions/workflows/ci.yml/badge.svg)](https://github.com/kuruash/mcp-verdict/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/kuruash/mcp-verdict/blob/main/LICENSE)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/mcp-verdict)](https://pypi.org/project/mcp-verdict/)
+
+
 **Test how your MCP servers behave when things go wrong.**
 
 MCP Verdict is an open-source Python CLI for testing failure handling and
